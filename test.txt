@@ -1,3 +1,0 @@
-read a
-write a + (b - 6 + 2))
-$$ 
