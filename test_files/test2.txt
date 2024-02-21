@@ -1,0 +1,4 @@
+read Fred
+read Wilma
+write Fred + Wilma - Barney
+$$

@@ -1,0 +1,9 @@
+a = 5
+b29 = 6
+while (b29 > 5)
+  gosub bottom
+endwhile
+write b29 + a - b29 ; end
+bottom: b29 = b29 + 10
+return
+$$
