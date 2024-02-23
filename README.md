@@ -1,5 +1,5 @@
 # parser-c
-Simple pseudo-parser written in C. My original class project parser written in Racket is [here](https://github.com/gschick3/parser-racket).
+Simple parser written in C. It validates the source code and creates a parse tree from it. My original class project pseudo-parser written in Racket is [here](https://github.com/gschick3/parser-racket).
 
 ## Language Grammar
 
@@ -9,8 +9,8 @@ This language is a simplified version of ALGOL
 program -> linelist $$ 
 linelist -> line linelist | epsilon 
 line ->  label stmt linetail 
-label -> id: | epsilon 
-linetail -> ;stmt+ | epsilon 
+label -> id : | epsilon 
+linetail -> ; stmt linetail | epsilon 
 stmt -> id = expr 
 	| if (boolean) stmt 
 	| while (boolean) linelist endwhile
@@ -26,8 +26,8 @@ bool-op -> < | > | >= | <= | <> | =
 expr -> id etail | num etail | (expr) 
 etail -> + expr | - expr | * expr | / expr | epsilon
 id -> [a-zA-Z][a-zA-Z0-9]*
-num -> numsign digit digit*
+num -> numsign digits
 numsign -> + | - | epsilon 
-digit -> [0-9]
+digits -> [0-9]*
 ```
 
