@@ -3,8 +3,6 @@ Simple parser written in C. It validates the source code and creates a parse tre
 
 ## Language Grammar
 
-This language is a simplified version of ALGOL
-
 ```
 program -> linelist $$ 
 linelist -> line linelist | epsilon 
