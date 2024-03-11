@@ -7,19 +7,19 @@
 #define MAX_LINE_LENGTH 255
 #define MAX_PROG_LENGTH 2048
 
-struct Program {
+typedef struct {
     char buff[MAX_PROG_LENGTH];
     int len;
     int next_char;
-};
+} Program;
 
 enum TokenType {END, NUMBER, SYMBOL, IDENTIFIER};
 
-struct Token {
+typedef struct {
     enum TokenType type;
     char buff[MAX_LINE_LENGTH];
     int len;
-};
+} Token;
 
 enum ProdType {PROGRAM, LINELIST, LINE, LINETAIL, STMT, EXPR, ETAIL, BOOLEAN, LABEL, NUM, BOOL_OP, NUMSIGN, DIGITS, ID, TOKEN};
 const char prod_strings[][10] = {"PROGRAM", "LINELIST", "LINE", "LINETAIL", "STMT", "EXPR", "ETAIL",
@@ -32,30 +32,31 @@ struct TreeNode {
     struct TreeNode* children[6];
     int num_children;
 };
+typedef struct TreeNode TreeNode;
 
 int parse(char[100]);
-void print_tree(const struct TreeNode*, int);
-void destroy_tree(struct TreeNode*);
+void print_tree(const TreeNode*, int);
+void destroy_tree(TreeNode*);
 
-void move_char(struct Token *dest, struct Program *src);
-struct Token next_token(struct Program*);
-struct TreeNode* token_to_tree(const struct Token*, enum ProdType);
+void move_char(Token *dest, Program *src);
+Token next_token(Program*);
+TreeNode* token_to_tree(const Token*, enum ProdType);
 
-bool is_token(struct Program*, struct TreeNode*, const char*);
-bool is_digits(struct Program*, struct TreeNode*);
-bool is_numsign(struct Program*, struct TreeNode*);
-bool is_id(struct Program*, struct TreeNode*);
-bool is_boolop(struct Program*, struct TreeNode*);
-bool is_num(struct Program*, struct TreeNode*);
-bool is_etail(struct Program*, struct TreeNode*);
-bool is_expr(struct Program*, struct TreeNode*);
-bool is_boolean(struct Program*, struct TreeNode*);
-bool is_stmt(struct Program*, struct TreeNode*);
-bool is_linetail(struct Program*, struct TreeNode*);
-bool is_label(struct Program*, struct TreeNode*);
-bool is_line(struct Program*, struct TreeNode*);
-bool is_linelist(struct Program*, struct TreeNode*);
-bool is_program(struct Program*, struct TreeNode*);
+bool is_token(Program*, TreeNode*, const char*);
+bool is_digits(Program*, TreeNode*);
+bool is_numsign(Program*, TreeNode*);
+bool is_id(Program*, TreeNode*);
+bool is_boolop(Program*, TreeNode*);
+bool is_num(Program*, TreeNode*);
+bool is_etail(Program*, TreeNode*);
+bool is_expr(Program*, TreeNode*);
+bool is_boolean(Program*, TreeNode*);
+bool is_stmt(Program*, TreeNode*);
+bool is_linetail(Program*, TreeNode*);
+bool is_label(Program*, TreeNode*);
+bool is_line(Program*, TreeNode*);
+bool is_linelist(Program*, TreeNode*);
+bool is_program(Program*, TreeNode*);
 
 int main() {
     const int num_files = 5;
@@ -78,13 +79,13 @@ int parse(char filename[100]) {
 
     // Read file character by character
     char c;
-    struct Program program = {"", 0, 0};
+    Program program = {"", 0, 0};
     while((c = fgetc(fp)) != EOF && program.len < MAX_PROG_LENGTH)
         program.buff[program.len++] = c;
     fclose(fp);
 
     // program_tree will capture the parse tree as it is built
-    struct TreeNode *program_tree = malloc(sizeof(struct TreeNode));
+    TreeNode *program_tree = malloc(sizeof(TreeNode));
     if (is_program(&program, program_tree)) {
         printf("Success.\n");
         print_tree(program_tree, 0);
@@ -96,7 +97,7 @@ int parse(char filename[100]) {
     return 0;
 }
 
-void print_tree(const struct TreeNode* tree_node, const int level) {
+void print_tree(const TreeNode* tree_node, const int level) {
     for (int i = 0; i < level; i++)
         printf("-   "); // indent based on level of parse tree
     printf("%s %.*s\n", prod_strings[tree_node->type], tree_node->data_len, tree_node->data);
@@ -104,7 +105,7 @@ void print_tree(const struct TreeNode* tree_node, const int level) {
         print_tree(tree_node->children[i], level+1);
 }
 
-void destroy_tree(struct TreeNode* tree_node) {
+void destroy_tree(TreeNode* tree_node) {
     for (int i = 0; i < tree_node->num_children; i++)
         destroy_tree(tree_node->children[i]);
 
@@ -112,13 +113,13 @@ void destroy_tree(struct TreeNode* tree_node) {
 }
 
 // Move a single character from the source code buffer to the token buffer
-void move_char(struct Token *dest, struct Program *src) {
+void move_char(Token *dest, Program *src) {
     dest->buff[dest->len++] = src->buff[src->next_char++];
 }
 
 // Scan for the next token in the source code stream
-struct Token next_token(struct Program *p) {
-    struct Token t = {END, "", 0};
+Token next_token(Program *p) {
+    Token t = {END, "", 0};
 
     // Skip whitespace
     while (p->next_char <= p->len && isspace(p->buff[p->next_char]))
@@ -147,8 +148,8 @@ struct Token next_token(struct Program *p) {
 }
 
 // Create an emtpy tree node
-struct TreeNode* new_tree_node(const enum ProdType type) {
-    struct TreeNode *new_node = malloc(sizeof(struct TreeNode));
+TreeNode* new_tree_node(const enum ProdType type) {
+    TreeNode *new_node = malloc(sizeof(TreeNode));
     new_node->num_children = 0;
     new_node->data_len = 0;
     new_node->type = type;
@@ -156,16 +157,16 @@ struct TreeNode* new_tree_node(const enum ProdType type) {
 }
 
 // Move all data from terminal into new tree node data
-struct TreeNode* token_to_tree(const struct Token* token, const enum ProdType type) {
-    struct TreeNode *new_node = new_tree_node(type);
+TreeNode* token_to_tree(const Token* token, const enum ProdType type) {
+    TreeNode *new_node = new_tree_node(type);
     strncpy(new_node->data, token->buff, token->len);
     new_node->data_len = token->len;
 
     return new_node;
 }
 
-bool is_token(struct Program *p, struct TreeNode *t, const char* token_name) {
-    const struct Token next = next_token(p);
+bool is_token(Program *p, TreeNode *t, const char* token_name) {
+    const Token next = next_token(p);
     if (!strncmp(next.buff, token_name, next.len + 1)) {
         // strncmp returns 0 if match, 1 or -1 otherwise
         t->children[t->num_children++] = token_to_tree(&next, TOKEN);
@@ -176,8 +177,8 @@ bool is_token(struct Program *p, struct TreeNode *t, const char* token_name) {
     return false;
 }
 
-bool is_digits(struct Program *p, struct TreeNode *t) {
-    const struct Token next = next_token(p); // This will remove tested tokens
+bool is_digits(Program *p, TreeNode *t) {
+    const Token next = next_token(p); // This will remove tested tokens
     // if successful, no need to do anything
     if (next.type == NUMBER) {
         t->children[t->num_children++] = token_to_tree(&next, DIGITS);
@@ -189,8 +190,8 @@ bool is_digits(struct Program *p, struct TreeNode *t) {
     return false;
 }
 
-bool is_numsign(struct Program *p, struct TreeNode *t) {
-    struct TreeNode *new_node = new_tree_node(NUMSIGN);
+bool is_numsign(Program *p, TreeNode *t) {
+    TreeNode *new_node = new_tree_node(NUMSIGN);
     if (is_token(p, new_node, "+") || is_token(p, new_node, "-"))
         t->children[t->num_children++] = new_node;
     else destroy_tree(new_node);
@@ -198,8 +199,8 @@ bool is_numsign(struct Program *p, struct TreeNode *t) {
     return true; // numsign can be empty, so always return true
 }
 
-bool is_id(struct Program *p, struct TreeNode *t) {
-    const struct Token next = next_token(p);
+bool is_id(Program *p, TreeNode *t) {
+    const Token next = next_token(p);
 
     // Make sure token is not reserved word
     const char reserved[10][10] = {"if", "while", "read", "write", "goto", "gosub", "return", "break", "end", "endwhile"};
@@ -219,8 +220,8 @@ bool is_id(struct Program *p, struct TreeNode *t) {
     return false;
 }
 
-bool is_boolop(struct Program *p, struct TreeNode *t) {
-    struct TreeNode *new_node = new_tree_node(BOOL_OP);
+bool is_boolop(Program *p, TreeNode *t) {
+    TreeNode *new_node = new_tree_node(BOOL_OP);
 
     if (is_token(p, new_node, ">")
         || is_token(p, new_node, "<")
@@ -236,8 +237,8 @@ bool is_boolop(struct Program *p, struct TreeNode *t) {
     return false;
 }
 
-bool is_num(struct Program *p, struct TreeNode *t) {
-    struct TreeNode *new_node = new_tree_node(NUM);
+bool is_num(Program *p, TreeNode *t) {
+    TreeNode *new_node = new_tree_node(NUM);
 
     if (is_numsign(p, new_node) && is_digits(p, new_node)) {
         t->children[t->num_children++] = new_node;
@@ -248,8 +249,8 @@ bool is_num(struct Program *p, struct TreeNode *t) {
     return false;
 }
 
-bool is_etail(struct Program *p, struct TreeNode *t) {
-    struct TreeNode *new_node = new_tree_node(ETAIL);
+bool is_etail(Program *p, TreeNode *t) {
+    TreeNode *new_node = new_tree_node(ETAIL);
 
     if ((is_token(p, new_node, "+") || is_token(p, new_node, "-")
         || is_token(p, new_node, "*") || is_token(p, new_node, "/"))
@@ -260,8 +261,8 @@ bool is_etail(struct Program *p, struct TreeNode *t) {
     return true; // etail will always evaluate to true
 }
 
-bool is_expr(struct Program *p, struct TreeNode *t) {
-    struct TreeNode *new_node = new_tree_node(EXPR);
+bool is_expr(Program *p, TreeNode *t) {
+    TreeNode *new_node = new_tree_node(EXPR);
     if ((is_id(p, new_node) || is_num(p, new_node)) && is_etail(p, new_node)) {
         t->children[t->num_children++] = new_node;
         return true;
@@ -281,8 +282,8 @@ bool is_expr(struct Program *p, struct TreeNode *t) {
     return false;
 }
 
-bool is_boolean(struct Program *p, struct TreeNode *t) {
-    struct TreeNode *new_node = new_tree_node(BOOLEAN);
+bool is_boolean(Program *p, TreeNode *t) {
+    TreeNode *new_node = new_tree_node(BOOLEAN);
     if (is_token(p, new_node, "true") || is_token(p, new_node, "false")) {
         t->children[t->num_children++] = new_node;
         return true;
@@ -301,8 +302,8 @@ bool is_boolean(struct Program *p, struct TreeNode *t) {
     return false;
 }
 
-bool is_stmt(struct Program *p, struct TreeNode *t) {
-    struct TreeNode *new_node = new_tree_node(STMT);
+bool is_stmt(Program *p, TreeNode *t) {
+    TreeNode *new_node = new_tree_node(STMT);
     const int orig_pos = p->next_char;
     if (is_id(p, new_node)) {
         if (is_token(p, new_node, "=") && is_expr(p, new_node)) {
@@ -366,8 +367,8 @@ bool is_stmt(struct Program *p, struct TreeNode *t) {
     return false;
 }
 
-bool is_linetail(struct Program *p, struct TreeNode *t) {
-    struct TreeNode *new_node = new_tree_node(LINETAIL);
+bool is_linetail(Program *p, TreeNode *t) {
+    TreeNode *new_node = new_tree_node(LINETAIL);
     if (is_token(p, new_node, ";") && is_stmt(p, new_node))
         t->children[t->num_children++] = new_node;
     else destroy_tree(new_node);
@@ -375,8 +376,8 @@ bool is_linetail(struct Program *p, struct TreeNode *t) {
     return true;
 }
 
-bool is_label(struct Program *p, struct TreeNode *t) {
-    struct TreeNode *new_node = new_tree_node(LABEL);
+bool is_label(Program *p, TreeNode *t) {
+    TreeNode *new_node = new_tree_node(LABEL);
     const int orig_pos = p->next_char;
     if (is_id(p, new_node) && is_token(p, new_node, ":"))
         t->children[t->num_children++] = new_node;
@@ -387,8 +388,8 @@ bool is_label(struct Program *p, struct TreeNode *t) {
     return true;
 }
 
-bool is_line(struct Program *p, struct TreeNode *t) {
-    struct TreeNode *new_node = new_tree_node(LINE);
+bool is_line(Program *p, TreeNode *t) {
+    TreeNode *new_node = new_tree_node(LINE);
     if (is_label(p, new_node) && is_stmt(p, new_node) && is_linetail(p, new_node)) {
         t->children[t->num_children++] = new_node;
         return true;
@@ -398,8 +399,8 @@ bool is_line(struct Program *p, struct TreeNode *t) {
     return false;
 }
 
-bool is_linelist(struct Program *p, struct TreeNode *t) {
-    struct TreeNode *new_node = new_tree_node(LINELIST);
+bool is_linelist(Program *p, TreeNode *t) {
+    TreeNode *new_node = new_tree_node(LINELIST);
     if (is_line(p, new_node) && is_linelist(p, new_node))
         t->children[t->num_children++] = new_node;
     else destroy_tree(new_node);
@@ -407,7 +408,7 @@ bool is_linelist(struct Program *p, struct TreeNode *t) {
     return true;
 }
 
-bool is_program(struct Program *p, struct TreeNode *t) {
+bool is_program(Program *p, TreeNode *t) {
     if (t == NULL) return false;
     t->type = PROGRAM;
     t->num_children = 0;
